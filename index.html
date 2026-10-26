@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>阿森斯失眠量表</title>
+<style>
+  :root {
+    --bg-start: #FFF6EE;
+    --bg-end: #FFEEDD;
+    --card-bg: #FFFFFF;
+    --accent: #FF8A5C;
+    --accent-deep: #F46A3E;
+    --accent-soft: #FFF0E6;
+    --text-main: #4A3B32;
+    --text-sub: #9A8A7E;
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --shadow: 0 12px 32px rgba(244, 130, 80, 0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(160deg, var(--bg-start) 0%, var(--bg-end) 100%);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+  /* 背景装饰 */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob-1 { width: 320px; height: 320px; background: #FFD9BE; top: -90px; left: -80px; }
+  .blob-2 { width: 260px; height: 260px; background: #FFE3C7; bottom: -60px; right: -60px; }
+  .blob-3 { width: 180px; height: 180px; background: #FFF1D6; top: 40%; right: 8%; }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px 40px;
+  }
+  @media (min-width: 768px) {
+    .page { max-width: 600px; }
+  }
+
+  /* 顶部 */
+  header {
+    text-align: center;
+    padding: 36px 0 20px;
+  }
+  header .moon {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 10px;
+    display: block;
+  }
+  header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-main);
+  }
+  header p {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text-sub);
+    letter-spacing: 1px;
+  }
+
+  /* 进度条 */
+  .progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0 20px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #FFB37E, var(--accent));
+    border-radius: 99px;
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .progress-text {
+    font-size: 13px;
+    color: var(--accent-deep);
+    font-weight: 600;
+    min-width: 42px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* 卡片区域 */
+  .stage {
+    flex: 1;
+    position: relative;
+    perspective: 800px;
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 28px 24px 24px;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateX(60px) scale(0.97);
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .card.active {
+    position: relative;
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+  }
+  .card.leaving {
+    opacity: 0;
+    transform: translateX(-60px) scale(0.97);
+  }
+
+  .q-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .q-num {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #FFB37E, var(--accent));
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 14px rgba(244, 106, 62, 0.28);
+  }
+  .q-title {
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.5;
+    padding-top: 6px;
+  }
+  .q-title .q-sub {
+    display: block;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+  .option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 15px 18px;
+    border-radius: var(--radius-md);
+    background: #FBF6F1;
+    border: 1.5px solid transparent;
+    font-size: 15.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+  }
+  .option .score-tag {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: var(--text-sub);
+    background: #fff;
+    border: 1px solid #EFE4DA;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-variant-numeric: tabular-nums;
+  }
+  .option:hover { background: var(--accent-soft); transform: translateY(-1px); }
+  .option.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .option.selected .score-tag {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* 底部导航 */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 18px;
+    min-height: 34px;
+  }
+  .btn-ghost {
+    border: none;
+    background: transparent;
+    color: var(--text-sub);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { color: var(--accent-deep); background: var(--accent-soft); }
+  .btn-ghost:disabled { opacity: 0.35; cursor: default; background: transparent; color: var(--text-sub); }
+  .hint {
+    font-size: 12px;
+    color: #C4B4A6;
+  }
+
+  /* 结果卡片 */
+  .result-card { text-align: center; }
+  .result-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin: 6px auto 16px;
+    display: block;
+    box-shadow: 0 10px 24px rgba(244, 106, 62, 0.18);
+  }
+  .result-score {
+    font-size: 46px;
+    font-weight: 800;
+    color: var(--accent-deep);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .result-score small { font-size: 16px; font-weight: 500; color: var(--text-sub); }
+  .result-level {
+    display: inline-block;
+    margin-top: 14px;
+    padding: 8px 22px;
+    border-radius: 99px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .level-good { background: #E8F7EE; color: #2E9E63; }
+  .level-mild { background: #FFF4DB; color: #D9950C; }
+  .level-bad { background: #FFE9E2; color: #E2572B; }
+  .result-desc {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--text-sub);
+    text-align: left;
+    background: #FBF6F1;
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+  }
+  .result-desc strong { color: var(--text-main); }
+  .notice {
+    margin-top: 14px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #B8A695;
+    text-align: left;
+    padding: 0 4px;
+  }
+  .notice b { color: var(--accent-deep); }
+  .btn-primary {
+    margin-top: 22px;
+    width: 100%;
+    border: none;
+    border-radius: 99px;
+    padding: 15px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(135deg, #FFB37E, var(--accent-deep));
+    box-shadow: 0 10px 22px rgba(244, 106, 62, 0.3);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: 2px;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 26px rgba(244, 106, 62, 0.36); }
+  .btn-primary:active { transform: translateY(0); }
+
+  footer {
+    margin-top: 26px;
+    text-align: center;
+    font-size: 12px;
+    color: #CDBBA9;
+    letter-spacing: 1px;
+  }
+
+  @media (max-width: 380px) {
+    .q-title { font-size: 16.5px; }
+    .option { font-size: 14.5px; padding: 13px 15px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+
+  <div class="page">
+    <header>
+      <svg class="moon" viewBox="0 0 48 48" fill="none">
+        <path d="M38 27.5C38 36.3 30.8 43.5 22 43.5C15.5 43.5 10 39.6 7.4 34.2C6.9 33.2 7.7 32.1 8.8 32.4C10.6 32.9 12.5 33.2 14.4 33.2C23.2 33.2 30.4 26 30.4 17.2C30.4 14 29.5 11 27.9 8.4C27.3 7.4 28.1 6.2 29.2 6.5C34.4 9.3 38 17 38 27.5Z" fill="#FFC98A"/>
+        <path d="M38 6L38.9 8.1L41 9L38.9 9.9L38 12L37.1 9.9L35 9L37.1 8.1L38 6Z" fill="#FF9F6E"/>
+        <path d="M12 4L12.7 5.6L14.3 6.3L12.7 7L12 8.6L11.3 7L9.7 6.3L11.3 5.6L12 4Z" fill="#FFD9A8"/>
+      </svg>
+      <h1>阿森斯失眠量表</h1>
+      <p>Athens Insomnia Scale · 评估最近一个月的睡眠状况</p>
+    </header>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">1 / 8</div>
+    </div>
+
+    <main class="stage" id="stage"></main>
+
+    <footer>仅供参考 · 如有严重睡眠问题请咨询专业医生</footer>
+  </div>
+
+<script>
+  const QUESTIONS = [
+    { title: "每天入睡用时？", sub: "关灯后到睡着的时间", options: ["很快入睡", "轻微延迟", "显著延迟", "延迟严重或无法入睡"] },
+    { title: "夜间苏醒次数？", sub: "", options: ["无", "偶尔醒来", "常常醒来", "次数很多或无法入睡"] },
+    { title: "比期望的时间早醒？", sub: "", options: ["无", "轻微提早醒来", "明显提早醒来", "提早很多或彻夜未眠"] },
+    { title: "对总睡眠时间的满意度？", sub: "", options: ["足够", "轻微不足", "显著不足", "严重不足或彻夜未眠"] },
+    { title: "对睡眠质量的满意度？", sub: "不考虑时长", options: ["满意", "轻微不满", "显著不满", "非常不满或无法入睡"] },
+    { title: "白天的情绪状况？", sub: "", options: ["正常", "轻微低落", "显著低落 / 暴躁", "非常不佳"] },
+    { title: "白天身体功能？", sub: "体力 / 精力 / 记忆力 / 理解力等", options: ["正常", "轻微不足", "显著不足", "非常差"] },
+    { title: "白天是否思睡？", sub: "", options: ["无", "轻微思睡", "显著思睡", "非常思睡 / 困顿无力"] }
+  ];
+
+  const STAR_SVG = `
+    <svg viewBox="0 0 120 120" width="120" height="120" aria-label="睡眠小星星">
+      <circle cx="60" cy="60" r="58" fill="#FFF3E4"/>
+      <path d="M60 22 L66 42 L87 43 L70 55 L76 76 L60 64 L44 76 L50 55 L33 43 L54 42 Z"
+            fill="#FFCE8A" stroke="#FFB37E" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M50 50 q4 5 8 0" stroke="#B0783C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M62 50 q4 5 8 0" stroke="#B0783C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M55 58 q5 4 10 0" stroke="#B0783C" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="46" cy="56" r="3.5" fill="#FFAE9E" opacity="0.7"/>
+      <circle cx="74" cy="56" r="3.5" fill="#FFAE9E" opacity="0.7"/>
+      <text x="86" y="30" font-size="11" fill="#FFB37E" font-weight="bold" font-family="sans-serif">Z</text>
+      <text x="94" y="20" font-size="9" fill="#FFC98A" font-weight="bold" font-family="sans-serif">Z</text>
+      <ellipse cx="60" cy="92" rx="26" ry="7" fill="#FFE7CF"/>
+    </svg>`;
+
+  const stage = document.getElementById("stage");
+  const progressFill = document.getElementById("progressFill");
+  const progressText = document.getElementById("progressText");
+  const progressWrap = document.getElementById("progressWrap");
+
+  let current = 0;
+  const answers = new Array(QUESTIONS.length).fill(null);
+  let animating = false;
+
+  function renderQuestion(index) {
+    const q = QUESTIONS[index];
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="q-head">
+        <div class="q-num">${index + 1}</div>
+        <div class="q-title">${q.title}${q.sub ? `<span class="q-sub">${q.sub}</span>` : ""}</div>
+      </div>
+      <div class="options">
+        ${q.options.map((opt, i) => `
+          <div class="option${answers[index] === i ? " selected" : ""}" data-score="${i}">
+            <span>${opt}</span>
+            <span class="score-tag">${i} 分</span>
+          </div>`).join("")}
+      </div>
+      <div class="nav-row">
+        <button class="btn-ghost" id="btnPrev" ${index === 0 ? "disabled" : ""}>‹ 上一题</button>
+        <span class="hint">选择后自动进入下一题</span>
+      </div>`;
+    return card;
+  }
+
+  function renderResult() {
+    const total = answers.reduce((a, b) => a + b, 0);
+    let level, cls, desc;
+    if (total <= 3) {
+      level = "无睡眠障碍";
+      cls = "level-good";
+      desc = "您的睡眠状况良好，请继续保持规律的作息习惯，享受每一个香甜的夜晚。";
+    } else if (total <= 5) {
+      level = "存在轻微睡眠问题";
+      cls = "level-mild";
+      desc = "您的睡眠存在轻微问题，建议调整作息、睡前远离电子设备、保持卧室安静舒适，必要时寻求专业建议。";
+    } else {
+      level = "存在失眠问题";
+      cls = "level-bad";
+      desc = "您的睡眠可能存在失眠问题，建议及时关注并咨询专业医生，进行进一步的评估与干预。";
+    }
+    const card = document.createElement("div");
+    card.className = "card result-card";
+    card.innerHTML = `
+      <div class="result-img">${STAR_SVG}</div>
+      <div class="result-score">${total}<small> / 24 分</small></div>
+      <div><span class="result-level ${cls}">${level}</span></div>
+      <div class="result-desc">
+        <strong>评分参考：</strong><br>
+        0-3 分：无睡眠障碍<br>
+        4-5 分：存在轻微睡眠问题<br>
+        6 分及以上：存在失眠问题<br><br>
+        ${desc}
+      </div>
+      <div class="notice"><b>注意：</b>该量表的评估结果只能说明个体在最近一个月中的睡眠状况，不能直接作为诊断标准。</div>
+      <button class="btn-primary" id="btnRestart">重新测试</button>`;
+    return card;
+  }
+
+  function updateProgress() {
+    const total = QUESTIONS.length;
+    const shown = Math.min(current + 1, total);
+    progressText.textContent = current >= total ? "完成" : `${shown} / ${total}`;
+    progressFill.style.width = `${(Math.min(current, total) / total) * 100}%`;
+    progressWrap.style.visibility = current >= total ? "hidden" : "visible";
+  }
+
+  function showCard(card, isFirst) {
+    const old = stage.querySelector(".card.active");
+    if (old) {
+      old.classList.remove("active");
+      old.classList.add("leaving");
+      setTimeout(() => old.remove(), 460);
+    }
+    stage.appendChild(card);
+    requestAnimationFrame(() => requestAnimationFrame(() => card.classList.add("active")));
+    updateProgress();
+    if (isFirst) progressFill.style.width = "0%";
+  }
+
+  function goTo(index) {
+    current = index;
+    showCard(renderQuestion(index));
+  }
+
+  function finish() {
+    current = QUESTIONS.length;
+    progressFill.style.width = "100%";
+    showCard(renderResult());
+  }
+
+  stage.addEventListener("click", (e) => {
+    if (animating) return;
+    const opt = e.target.closest(".option");
+    if (opt) {
+      const score = parseInt(opt.dataset.score, 10);
+      answers[current] = score;
+      opt.parentElement.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+      opt.classList.add("selected");
+      animating = true;
+      setTimeout(() => {
+        animating = false;
+        if (current + 1 < QUESTIONS.length) goTo(current + 1);
+        else finish();
+      }, 320);
+      return;
+    }
+    if (e.target.closest("#btnPrev") && current > 0) {
+      goTo(current - 1);
+      return;
+    }
+    if (e.target.closest("#btnRestart")) {
+      answers.fill(null);
+      goTo(0);
+    }
+  });
+
+  goTo(0);
+</script>
+</body>
+</html>
